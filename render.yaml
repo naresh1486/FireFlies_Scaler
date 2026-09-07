@@ -1,0 +1,30 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# Deploys the FastAPI backend with a persistent disk mounted at /app/data
+# so the SQLite database survives redeploys. Seed runs on first boot.
+services:
+  - type: web
+    name: fireflies-clone-backend
+    runtime: docker
+    plan: starter
+    rootDir: .
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        value: sqlite:////app/data/app.db
+      - key: CORS_ORIGINS
+        sync: false              # set to your Vercel domain in the Render dashboard
+      - key: LOG_LEVEL
+        value: INFO
+      - key: DEFAULT_USER_NAME
+        value: Naresh
+      - key: SEED_ON_START
+        value: "true"
+    disk:
+      name: sqlite-data
+      mountPath: /app/data
+      sizeGB: 1
