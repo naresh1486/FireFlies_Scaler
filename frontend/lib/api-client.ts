@@ -22,18 +22,30 @@ interface RequestOptions {
   signal?: AbortSignal;
 }
 
-const baseUrl =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:8000";
+const rawBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+const baseUrl = rawBaseUrl
+  ? rawBaseUrl.replace(/\/$/, "")
+  : process.env.NODE_ENV === "production"
+    ? ""
+    : "http://localhost:8000";
 
 function buildUrl(path: string, params?: RequestOptions["params"]): string {
-  const url = new URL(`${baseUrl}${path.startsWith("/") ? path : `/${path}`}`);
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value === undefined || value === null) return;
-      url.searchParams.append(key, String(value));
-    });
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const fullPath = baseUrl ? `${baseUrl}${cleanPath}` : cleanPath;
+
+  if (!params) {
+    return fullPath;
   }
-  return url.toString();
+
+  const [base, existingQuery] = fullPath.split("?");
+  const searchParams = new URLSearchParams(existingQuery);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    searchParams.append(key, String(value));
+  });
+
+  const qs = searchParams.toString();
+  return qs ? `${base}?${qs}` : base;
 }
 
 async function parseError(response: Response): Promise<ApiError> {
@@ -62,7 +74,7 @@ async function request<T>(method: string, path: string, options: RequestOptions 
     headers,
     body,
     signal: options.signal,
-    credentials: "include",
+    credentials: "same-origin",
   });
   if (!response.ok) {
     throw await parseError(response);

@@ -125,21 +125,23 @@ def test_delete_meeting_cascades_action_items() -> None:
 def test_topics_and_chapters_derived_from_sections() -> None:
     with _client() as client:
         m = _create_meeting(client)
-        # Seed two sections with timestamped bodies
-        import sqlite3, datetime
-        conn = sqlite3.connect("/Users/nareshyadav/Desktop/FireFlies/backend/data/app.db")
-        cur = conn.cursor()
-        now = datetime.datetime.utcnow().isoformat()
-        cur.executemany(
-            "INSERT INTO summary_sections (meeting_id, heading, subheading, body, sequence, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            [
-                (m["id"], "Notes", None, "- Wrap-up (10:00)", 1, now),
-                (m["id"], "App Overview", None, "- First bullet (00:07)\n  - Sub bullet", 2, now),
-                (m["id"], "User Interface", None, "- Recent meetings left, calendar right (00:59)", 3, now),
-            ],
-        )
-        conn.commit()
-        conn.close()
+        from datetime import datetime
+        from app.core.db import SessionLocal
+        from app.models import SummarySection
+
+        db = SessionLocal()
+        try:
+            now = datetime.utcnow()
+            db.add_all(
+                [
+                    SummarySection(meeting_id=m["id"], heading="Notes", subheading=None, body="- Wrap-up (10:00)", sequence=1, created_at=now),
+                    SummarySection(meeting_id=m["id"], heading="App Overview", subheading=None, body="- First bullet (00:07)\n  - Sub bullet", sequence=2, created_at=now),
+                    SummarySection(meeting_id=m["id"], heading="User Interface", subheading=None, body="- Recent meetings left, calendar right (00:59)", sequence=3, created_at=now),
+                ]
+            )
+            db.commit()
+        finally:
+            db.close()
 
         topics = client.get(f"/api/v1/meetings/{m['id']}/topics").json()
         names = [t["name"] for t in topics["topics"]]

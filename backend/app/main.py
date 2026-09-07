@@ -57,8 +57,11 @@ def _cors_origins() -> list[str]:
     raw = settings.cors_origins.strip()
     if not raw:
         return []
-    return [o.strip() for o in raw.split(",") if o.strip()]
+    return [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
 
+
+_origins = _cors_origins()
+_has_wildcard = "*" in _origins
 
 app = FastAPI(
     title="Fireflies Clone API",
@@ -68,8 +71,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins(),
-    allow_credentials=True,
+    allow_origins=_origins if not _has_wildcard else ["*"],
+    allow_origin_regex=settings.cors_origin_regex,
+    allow_credentials=not _has_wildcard,
     allow_methods=["*"],
     allow_headers=["*"],
 )

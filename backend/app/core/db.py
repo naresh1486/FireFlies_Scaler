@@ -12,6 +12,14 @@ class Base(DeclarativeBase):
     pass
 
 
+from pathlib import Path
+from sqlalchemy.engine.url import make_url
+
+url = make_url(settings.database_url)
+if url.drivername.startswith("sqlite") and url.database and url.database != ":memory:":
+    db_file_path = Path(url.database).resolve()
+    db_file_path.parent.mkdir(parents=True, exist_ok=True)
+
 engine = create_engine(
     settings.database_url,
     echo=False,

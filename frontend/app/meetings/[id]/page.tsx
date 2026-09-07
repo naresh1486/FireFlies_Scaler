@@ -87,7 +87,11 @@ function NotepadContent({ meetingId }: { meetingId: number }) {
   }
 
   const meeting = meetingQuery.data;
-  const mediaUrl = meeting.media_url;
+  const demoAudioUrl = process.env.NEXT_PUBLIC_DEMO_AUDIO_URL?.trim();
+  const mediaUrl =
+    meeting.media_url === "/audio/sample.wav" && demoAudioUrl
+      ? demoAudioUrl
+      : meeting.media_url;
 
   return (
     <MediaSyncProvider meetingId={meetingId} src={mediaUrl}>
