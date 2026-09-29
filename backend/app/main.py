@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -86,3 +86,17 @@ async def app_error_handler(_request: Request, exc: AppError) -> JSONResponse:
 
 
 app.include_router(api_router, prefix="/api/v1")
+
+
+@app.get("/", include_in_schema=False)
+def root() -> dict[str, str]:
+    return {
+        "name": app.title,
+        "docs": "/docs",
+        "health": "/api/v1/health",
+    }
+
+
+@app.get("/favicon.ico", include_in_schema=False, status_code=204)
+def favicon() -> Response:
+    return Response(status_code=204)

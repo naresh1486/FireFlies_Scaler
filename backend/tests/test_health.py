@@ -3,6 +3,16 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
+def test_root_and_favicon() -> None:
+    with TestClient(app) as client:
+        root = client.get("/")
+        assert root.status_code == 200
+        assert root.json()["docs"] == "/docs"
+
+        favicon = client.get("/favicon.ico")
+        assert favicon.status_code == 204
+
+
 def test_health() -> None:
     with TestClient(app) as client:
         response = client.get("/api/v1/health")
